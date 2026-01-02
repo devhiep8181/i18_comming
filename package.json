@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "translate": "i18next-parser && node auto-translate.cjs",
+    "translate": "npx i18next-parser \"src/**/*.{ts,tsx}\" --config i18next-parser.config.cjs && node auto-translate.cjs",
     "prepare": "husky"
   },
   "dependencies": {
