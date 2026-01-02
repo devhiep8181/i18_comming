@@ -12,6 +12,8 @@ function App() {
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <h1>{t('Xin chào, đây là dự án tự động đa ngôn ngữ')}</h1>
       <p>{t('Bạn chỉ cần viết tiếng Việt, máy sẽ tự dịch sang tiếng Anh')}</p>
+      <h1>{t('Xin chào, đây là tính năng tự động dịch')}</h1>
+      <p>{t('Hệ thống đang kiểm tra Husky và Google Translate')}</p>
       
       <div style={{ marginTop: '20px' }}>
         <button onClick={() => changeLanguage('vi')}>Tiếng Việt</button>
