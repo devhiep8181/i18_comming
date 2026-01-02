@@ -1,4 +1,4 @@
-Đây là toàn bộ nội dung file `README.md` được bọc trong block Markdown để bạn dễ dàng copy:
+
 
 ```markdown
 # 🌍 Quy Trình Tự Động Hóa Đa Ngôn Ngữ (React i18n + AI)
