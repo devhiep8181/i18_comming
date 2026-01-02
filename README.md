@@ -3,7 +3,8 @@
 ```markdown
 # 🌍 Quy Trình Tự Động Hóa Đa Ngôn Ngữ (React i18n + AI)
 
-Dự án này tích hợp hệ thống tự động hóa dịch thuật 100%. Lập trình viên chỉ cần tập trung viết Code, hệ thống sẽ tự động quét, phân loại và dịch thuật sang nhiều ngôn ngữ khác nhau.
+Dự án này tích hợp hệ thống tự động hóa dịch thuật 100%. Lập trình viên chỉ cần tập trung viết Code,
+hệ thống sẽ tự động quét, phân loại và dịch thuật sang nhiều ngôn ngữ khác nhau.
 
 ---
 
@@ -22,7 +23,8 @@ Dự án này tích hợp hệ thống tự động hóa dịch thuật 100%. L�
 Hệ thống là sự kết hợp của 3 công nghệ then chốt:
 
 ### 1. Script Quét & Dịch (`auto-translate.cjs`)
-Sử dụng thư viện **Glob** để tìm file và **Regex** để trích xuất Key. Script sẽ thực hiện một "Deep Merge" để biến các chuỗi Key phẳng thành các Object lồng nhau trong file JSON đầu ra.
+Sử dụng thư viện **Glob** để tìm file và **Regex** để trích xuất Key. Script sẽ thực hiện một "Deep Merge"
+để biến các chuỗi Key phẳng thành các Object lồng nhau trong file JSON đầu ra.
 
 ### 2. Husky (Git Hooks)
 Husky đóng vai trò là "người gác cổng". Mỗi khi bạn thực hiện commit:
@@ -32,7 +34,8 @@ Husky đóng vai trò là "người gác cổng". Mỗi khi bạn thực hiện 
 4. Lệnh `git add` được thực thi tự động để thêm các file JSON vào commit.
 
 ### 3. Tối ưu hóa Bản dịch
-Script có cơ chế **Incremental Update**: Chỉ dịch những Key mới hoặc Key chưa có nội dung. Nếu bạn đã sửa bản dịch thủ công trong file JSON, script sẽ tôn trọng và không ghi đè lên nội dung đó.
+Script có cơ chế **Incremental Update**: Chỉ dịch những Key mới hoặc Key chưa có nội dung.
+Nếu bạn đã sửa bản dịch thủ công trong file JSON, script sẽ tôn trọng và không ghi đè lên nội dung đó.
 
 ---
 
