@@ -1,8 +1,21 @@
 {
-  "Xin chào, đây là dự án tự động đa ngôn ngữ": "Hello, this is a multilingual automation project",
-  "Bạn chỉ cần viết tiếng Việt, máy sẽ tự dịch sang tiếng Anh": "You just need to write in Vietnamese, the machine will automatically translate into English",
-  "Xin chào, đây là tính năng tự động dịch": "Hello, this is the auto-translate feature",
-  "Hệ thống đang kiểm tra Husky": "The system is checking Husky",
-  "Hệ thống đang testffff": "The system is testingffff",
-  "Chọn ngôn ngữ của bạn:": "Choose your language:"
+  "homepage": {
+    "welcome_title": "welcome title",
+    "subtitle": "subtitle",
+    "selecte_language": "selecte language"
+  },
+  "common": {
+    "button": {
+      "save": "save",
+      "cancel": "cancel"
+    }
+  },
+  "header": {
+    "logo_name": "logo name",
+    "menu": {
+      "home": "home",
+      "about": "about",
+      "contact": "contact"
+    }
+  }
 }

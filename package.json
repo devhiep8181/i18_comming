@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "translate": "npx i18next-parser \"src/**/*.{ts,tsx}\" --config i18next-parser.config.cjs && node auto-translate.cjs",
+    "translate": "node auto-translate.cjs",
     "prepare": "husky"
   },
   "dependencies": {
+    "glob": "^13.0.0",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",

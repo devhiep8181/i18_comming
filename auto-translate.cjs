@@ -1,92 +1,81 @@
-const fs = require("fs");
-const translate = require("google-translate-api-x");
-const path = require("path");
+const fs = require('fs');
+const translate = require('google-translate-api-x');
+const path = require('path');
+const { globSync } = require('glob'); // Thêm thư viện này
 
-const targetLanguages = ["en", "ko", "tr", "zh-CN"];
-const sourceFile = path.join(__dirname, "src", "App.tsx"); // Đường dẫn đến file code của bạn
-const localesDir = path.join(__dirname, "public", "locales");
+const targetLanguages = ['vi', 'ko', 'tr', 'zh-CN']; 
+const localesDir = path.join(__dirname, 'public', 'locales');
+
+function setNestedKey(obj, path, value) {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    const lastObj = keys.reduce((target, key) => {
+        target[key] = target[key] || {};
+        return target[key];
+    }, obj);
+    lastObj[lastKey] = value;
+}
 
 async function run() {
-  console.log("--- 🔍 Bắt đầu quét chữ từ App.tsx ---");
+    console.log('--- 🔍 Đang quét toàn bộ file .tsx trong thư mục src ---');
+    
+    // Tìm tất cả các file .tsx trong thư mục src và các thư mục con
+    const files = globSync('src/**/*.tsx');
+    console.log(`Tìm thấy ${files.length} file cần quét.`);
 
-  if (!fs.existsSync(sourceFile)) {
-    console.log(
-      "❌ Không tìm thấy file src/App.tsx. Hãy kiểm tra lại đường dẫn!"
-    );
-    return;
-  }
+    const allKeys = new Set();
+    const regex = /t\(['"](.+?)['"]\)/g;
 
-  const content = fs.readFileSync(sourceFile, "utf8");
-
-  // Regex nhặt chữ trong t('...') hoặc t("...")
-  const regex = /t\(['"](.+?)['"]\)/g;
-  const keys = [];
-  let match;
-  while ((match = regex.exec(content)) !== null) {
-    keys.push(match[1]);
-  }
-
-  if (keys.length === 0) {
-    console.log("⚠️ Không tìm thấy hàm t() nào. Bạn đã lưu file chưa?");
-    return;
-  }
-
-  console.log(`✅ Tìm thấy ${keys.length} câu cần xử lý.`);
-
-  // Tạo thư mục nếu chưa có
-  if (!fs.existsSync(localesDir)) fs.mkdirSync(localesDir, { recursive: true });
-
-  // Tạo file vi.json làm gốc (Tiếng Việt)
-  // --- Xử lý file vi.json (File gốc) ---
-  const viPath = path.join(localesDir, "vi.json");
-  // Đọc dữ liệu cũ nếu có để không làm mất bản sửa tay
-  let viData = fs.existsSync(viPath)
-    ? JSON.parse(fs.readFileSync(viPath, "utf8"))
-    : {};
-
-  keys.forEach((k) => {
-    // Chỉ gán k = k nếu nó chưa tồn tại hoặc đang trống
-    if (!viData[k]) {
-      viData[k] = k;
-    }
-  });
-
-  // (Tùy chọn) Xóa bỏ các Key cũ không còn tồn tại trong code
-  Object.keys(viData).forEach((oldKey) => {
-    if (!keys.includes(oldKey)) delete viData[oldKey];
-  });
-
-  fs.writeFileSync(viPath, JSON.stringify(viData, null, 2));
-
-  // Dịch sang các ngôn ngữ khác
-  for (const lang of targetLanguages) {
-    const filePath = path.join(localesDir, `${lang}.json`);
-    let langData = fs.existsSync(filePath)
-      ? JSON.parse(fs.readFileSync(filePath, "utf8"))
-      : {};
-
-    console.log(`--- 🌐 Đang dịch sang: ${lang.toUpperCase()} ---`);
-    for (const key of keys) {
-      // Nếu chưa có bản dịch thì mới gọi API
-      if (!langData[key] || langData[key] === key) {
-        try {
-          const res = await translate(key, {
-            from: "vi",
-            to: lang,
-            forceTo: true,
-          });
-          langData[key] = res.text;
-          console.log(`   OK: "${key.substring(0, 15)}..." -> ${res.text}`);
-        } catch (e) {
-          console.error(`   ❌ Lỗi dịch [${lang}]:`, e.message);
+    // Quét từng file để thu thập Key
+    files.forEach(file => {
+        const content = fs.readFileSync(file, 'utf8');
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            allKeys.add(match[1]);
         }
-      }
+    });
+
+    const keys = [...allKeys];
+    if (keys.length === 0) return console.log('❌ Không tìm thấy key nào trong các file .tsx');
+    console.log(`✅ Tổng cộng có ${keys.length} key duy nhất.`);
+
+    if (!fs.existsSync(localesDir)) fs.mkdirSync(localesDir, { recursive: true });
+
+    // --- 1. XỬ LÝ FILE GỐC (EN) ---
+    const enData = {};
+    keys.forEach(k => {
+        const cleanText = k.split('.').pop().replace(/_/g, ' ');
+        setNestedKey(enData, k, cleanText);
+    });
+    fs.writeFileSync(path.join(localesDir, 'en.json'), JSON.stringify(enData, null, 2));
+    console.log('✅ Đã cập nhật file en.json.');
+
+    // --- 2. DỊCH SANG CÁC TIẾNG KHÁC ---
+    for (const lang of targetLanguages) {
+        const filePath = path.join(localesDir, `${lang}.json`);
+        // Đọc dữ liệu cũ để tránh dịch lại những gì đã dịch rồi
+        let langData = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
+
+        console.log(`--- 🌐 Đang dịch sang: ${lang.toUpperCase()} ---`);
+        for (const key of keys) {
+            try {
+                // Kiểm tra xem key đã có giá trị dịch chưa (hỗ trợ object lồng nhau)
+                const getCurrentValue = (obj, path) => path.split('.').reduce((prev, curr) => prev && prev[curr], obj);
+                const existingValue = getCurrentValue(langData, key);
+
+                if (!existingValue || existingValue.includes('_')) {
+                    const textToTranslate = key.split('.').pop().replace(/_/g, ' ');
+                    const res = await translate(textToTranslate, { from: 'en', to: lang, forceTo: true });
+                    setNestedKey(langData, key, res.text);
+                    console.log(`   [${lang}] ${key} -> ${res.text}`);
+                }
+            } catch (e) {
+                console.error(`   ❌ Lỗi tại key: ${key}`);
+            }
+        }
+        fs.writeFileSync(filePath, JSON.stringify(langData, null, 2));
     }
-    fs.writeFileSync(filePath, JSON.stringify(langData, null, 2));
-  }
-  console.log(
-    "\n🚀 THÀNH CÔNG! Đã cập nhật toàn bộ file trong public/locales/"
-  );
+    console.log('\n🚀 HOÀN TẤT: Đã quét toàn bộ src/ và dịch đa ngôn ngữ!');
 }
 
 run();

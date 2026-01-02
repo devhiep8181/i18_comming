@@ -10,6 +10,7 @@ i18n
   .init({
     fallbackLng: 'vi', // Ngôn ngữ mặc định
     debug: false,
+    keySeparator: '.',
     interpolation: {
       escapeValue: false, 
     },
