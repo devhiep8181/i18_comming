@@ -1,7 +1,7 @@
 const fs = require('fs');
 const translate = require('google-translate-api-x');
 const path = require('path');
-const { globSync } = require('glob'); // Thêm thư viện này
+const { globSync } = require('glob');
 
 const targetLanguages = ['vi', 'ko', 'tr', 'zh-CN']; 
 const localesDir = path.join(__dirname, 'public', 'locales');
@@ -16,17 +16,16 @@ function setNestedKey(obj, path, value) {
     lastObj[lastKey] = value;
 }
 
+// Hàm bổ trợ để lấy giá trị từ object lồng nhau
+const getCurrentValue = (obj, path) => path.split('.').reduce((prev, curr) => prev && prev[curr], obj);
+
 async function run() {
     console.log('--- 🔍 Đang quét toàn bộ file .tsx trong thư mục src ---');
     
-    // Tìm tất cả các file .tsx trong thư mục src và các thư mục con
     const files = globSync('src/**/*.tsx');
-    console.log(`Tìm thấy ${files.length} file cần quét.`);
-
     const allKeys = new Set();
     const regex = /t\(['"](.+?)['"]\)/g;
 
-    // Quét từng file để thu thập Key
     files.forEach(file => {
         const content = fs.readFileSync(file, 'utf8');
         let match;
@@ -36,36 +35,42 @@ async function run() {
     });
 
     const keys = [...allKeys];
-    if (keys.length === 0) return console.log('❌ Không tìm thấy key nào trong các file .tsx');
-    console.log(`✅ Tổng cộng có ${keys.length} key duy nhất.`);
+    if (keys.length === 0) return console.log('❌ Không tìm thấy key nào.');
 
     if (!fs.existsSync(localesDir)) fs.mkdirSync(localesDir, { recursive: true });
 
     // --- 1. XỬ LÝ FILE GỐC (EN) ---
-    const enData = {};
+    const enPath = path.join(localesDir, 'en.json');
+    // ĐỌC FILE CŨ (NẾU CÓ) ĐỂ GIỮ GIÁ TRỊ ĐÃ SỬA
+    let enData = fs.existsSync(enPath) ? JSON.parse(fs.readFileSync(enPath, 'utf8')) : {};
+    
     keys.forEach(k => {
-        const cleanText = k.split('.').pop().replace(/_/g, ' ');
-        setNestedKey(enData, k, cleanText);
+        const existingVal = getCurrentValue(enData, k);
+        // CHỈ CẬP NHẬT NẾU KEY CHƯA CÓ HOẶC GIÁ TRỊ TRỐNG
+        if (!existingVal) {
+            const cleanText = k.split('.').pop().replace(/_/g, ' ');
+            setNestedKey(enData, k, cleanText);
+            console.log(` ✨ Đã thêm key mới vào en.json: ${k}`);
+        }
     });
-    fs.writeFileSync(path.join(localesDir, 'en.json'), JSON.stringify(enData, null, 2));
-    console.log('✅ Đã cập nhật file en.json.');
+    fs.writeFileSync(enPath, JSON.stringify(enData, null, 2));
+    console.log('✅ Đã cập nhật file en.json (Giữ nguyên các giá trị bạn đã sửa).');
 
     // --- 2. DỊCH SANG CÁC TIẾNG KHÁC ---
     for (const lang of targetLanguages) {
         const filePath = path.join(localesDir, `${lang}.json`);
-        // Đọc dữ liệu cũ để tránh dịch lại những gì đã dịch rồi
         let langData = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : {};
 
         console.log(`--- 🌐 Đang dịch sang: ${lang.toUpperCase()} ---`);
         for (const key of keys) {
             try {
-                // Kiểm tra xem key đã có giá trị dịch chưa (hỗ trợ object lồng nhau)
-                const getCurrentValue = (obj, path) => path.split('.').reduce((prev, curr) => prev && prev[curr], obj);
                 const existingValue = getCurrentValue(langData, key);
+                
+                // Lấy nội dung từ file EN hiện tại làm gốc để dịch
+                const sourceText = getCurrentValue(enData, key) || key.split('.').pop().replace(/_/g, ' ');
 
                 if (!existingValue || existingValue.includes('_')) {
-                    const textToTranslate = key.split('.').pop().replace(/_/g, ' ');
-                    const res = await translate(textToTranslate, { from: 'en', to: lang, forceTo: true });
+                    const res = await translate(sourceText, { from: 'en', to: lang, forceTo: true });
                     setNestedKey(langData, key, res.text);
                     console.log(`   [${lang}] ${key} -> ${res.text}`);
                 }
@@ -75,7 +80,7 @@ async function run() {
         }
         fs.writeFileSync(filePath, JSON.stringify(langData, null, 2));
     }
-    console.log('\n🚀 HOÀN TẤT: Đã quét toàn bộ src/ và dịch đa ngôn ngữ!');
+    console.log('\n🚀 HOÀN TẤT!');
 }
 
 run();
